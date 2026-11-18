@@ -925,6 +925,27 @@ function upgradeToRigged(data,isBoss,template){
  const root=new THREE.Group(),figure=rigCloner.clone(template.scene);
  figure.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
  root.add(figure);
+
+ // V12: personality details are attached to animated GLB head bones.
+ const stylingSeed=avatarSeed(data),headBone=figure.getObjectByName('Head');
+ if(headBone){
+  const accent=[0xffd49c,0xf2b8cd,0xb9e2d7,0xd7c7f2,0xf5da94][stylingSeed%5];
+  const tuft=orb(headBone,accent,-.19,.52,.05,.12,.17,.12);tuft.rotation.z=-.32;tuft.castShadow=false;
+  if(stylingSeed%3===0){
+   for(const side of [-1,1]){
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(.14,.018,5,20),am(0x59616b));
+    ring.position.set(side*.18,.04,.47);headBone.add(ring);
+   }
+   box(headBone,.10,.022,.025,0,.04,.48,0x59616b).castShadow=false;
+  }else if(stylingSeed%3===1){
+   const clip=rounded(headBone,.22,.045,.07,.32,.34,.17,accent,.018);
+   clip.rotation.z=.30;clip.castShadow=false;
+  }else{
+   const curl=orb(headBone,0x775765,-.36,.29,-.04,.12,.17,.17);curl.castShadow=false;
+  }
+ }
+ const contact=new THREE.Mesh(new THREE.CircleGeometry(.47,24),new THREE.MeshBasicMaterial({color:0x293e3a,transparent:true,opacity:.14,depthWrite:false}));
+ contact.rotation.x=-Math.PI/2;contact.position.y=.015;root.add(contact);
  const tag=textSprite((isBoss?'主管 NPC':data.name||'同事').slice(0,12),{bg:isBoss?'#885a52':'#254a52',fg:'#f9f3df',fontSize:44,scale:1.65});
  tag.position.set(0,2.93,0);root.add(tag);
  const pos=coord(data.x,data.y);root.position.set(pos.x,0,pos.z);scene.add(root);
@@ -1069,7 +1090,7 @@ function createAvatar(data,isBoss=false){
   arms.push(shoulder);elbows.push(elbow);
  }
  // Oversized head with soft jaw, cheeks, ears, nose and individually modeled eyes.
- const head=new THREE.Group();head.position.set(0,1.735,.045);figure.add(head);
+ const head=new THREE.Group();head.position.set(0,1.735,.045);head.scale.set(1.10,1.08,1.10);figure.add(head);
  orb(head,skinColor,0,0,0,.47,.49,.435);
  for(const side of [-1,1]){
   orb(head,skinColor,side*.459,-.035,-.015,.107,.15,.115);
@@ -1293,8 +1314,46 @@ function addColliderDebug(){
   mesh.position.set(p.x,.12,p.z);mesh.renderOrder=4;scene.add(mesh);
  }
 }
+
+function decorateCentralOffice(){
+ // All additions are visual-only: original obstacles and gameplay are untouched.
+ const art=new THREE.Group();art.name='V12CentralArt';roomGroup.add(art);
+ const warm=new THREE.PointLight(0xffd4a3,2.5,6,2);warm.position.set(-4.2,3.9,-1.8);art.add(warm);
+ const screenLight=new THREE.PointLight(0x9bd9d2,1.25,5,2);screenLight.position.set(-.25,2.2,1.3);art.add(screenLight);
+ const trim=(w,h,d,x,y,z,c)=>{const m=box(art,w,h,d,x,y,z,c);m.castShadow=false;m.receiveShadow=false;return m};
+ trim(14,.055,.08,-.4,2.62,-4.26,0xfff0d9);
+ trim(14,.035,.09,-.4,.36,-4.26,0x77968c);
+ for(let x=-6;x<=6;x+=2)trim(.035,1.25,.07,x,1.6,-4.28,0xf6e5cd);
+ for(const x of [-2.8,2.55])trim(.025,.008,5.4,x,.025,-.30,0xc9b092);
+ const word=textSprite('摸魚總部',{bg:'#41665e',fg:'#fff0d5',fontSize:44,scale:2.25});
+ word.position.set(-.5,2.38,-4.02);art.add(word);
+ for(const [x,z] of [[-1.25,1.3],[.76,1.3],[-4.75,2.65]]){
+  trim(.024,.34,.024,x+.46,1.08,z-.15,0xc5b19b);
+  const shade=cylinder(art,.19,.11,.14,x+.46,1.32,z-.15,0xf2d49e,14);shade.castShadow=false;shade.rotation.z=.18;
+  for(let k=0;k<8;k++)trim(.085,.009,.04,x-.37+(k%4)*.105,.917,z+.14+Math.floor(k/4)*.072,0xd9ebe3);
+  for(let i=0;i<3;i++)trim(.24,.009,.17,x+.19,.88+i*.012,z+.19,0xfff4df);
+  const led=orb(art,0x9be9b7,x-.2,1.02,z-.034,.017,.017,.014);led.castShadow=false;
+ }
+ const menu=textSprite('續杯才能續命',{bg:'#645247',fg:'#fff1d8',fontSize:40,scale:2.1});
+ menu.position.set(-4.25,2.32,-2.51);art.add(menu);
+ for(const x of [-5.18,-4.38,-3.58]){
+  trim(.02,.41,.02,x,3.10,-1.8,0x89766a);
+  const pendant=cylinder(art,.22,.31,.16,x,2.84,-1.8,0xffdeaa,16);pendant.castShadow=false;
+  const bulb=orb(art,0xfff2c8,x,2.71,-1.8,.11,.045,.11);bulb.castShadow=false;
+ }
+ for(let i=0;i<4;i++){
+  const mug=cylinder(art,.073,.065,.11,-5.14+i*.16,.94,-1.8,[0xf8ecd5,0xb9d7d1,0xf1d1c5,0xede5ce][i],12);
+  mug.castShadow=false;
+ }
+ const pot=cylinder(art,.15,.12,.24,-3.25,.97,-1.87,0xb57d63,12);pot.castShadow=false;
+ for(let i=0;i<5;i++){
+  const a=i*Math.PI*2/5,leaf=orb(art,0x78a082,-3.25+Math.cos(a)*.12,1.24+Math.sin(a)*.065,-1.87+Math.sin(a)*.12,.10,.16,.09);
+  leaf.rotation.z=Math.cos(a)*.35;leaf.castShadow=false;
+ }
+}
+
 function buildScene(){
- scene=new THREE.Scene();scene.background=new THREE.Color(0xe2eae2);scene.fog=new THREE.Fog(0xe2eae2,28,65);
+ scene=new THREE.Scene();scene.background=new THREE.Color(0xdde8e3);scene.fog=new THREE.Fog(0xdde8e3,32,73);
  const canvas=$('sceneCanvas');renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.35));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
  renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
@@ -1305,6 +1364,7 @@ function buildScene(){
  const fill=new THREE.DirectionalLight(0xc4e5e2,1);fill.position.set(8,6,-8);scene.add(fill);
  groundPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
  buildRoom();
+ decorateCentralOffice();
  buildPrankProps();
  if(new URLSearchParams(location.search).get('hitboxes')==='1')addColliderDebug();
  resizeScene();

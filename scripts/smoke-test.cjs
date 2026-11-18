@@ -1,0 +1,30 @@
+'use strict';
+const fs=require('node:fs');
+const vm=require('node:vm');
+const assert=require('node:assert/strict');
+const html=fs.readFileSync(require('node:path').join(__dirname,'..','index.html'),'utf8');
+const script=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)].at(-1)?.[1];
+assert(script,'game boot script exists');
+new vm.Script(script,{filename:'index.html inline game.js'});
+const from=html.indexOf('/* BEGIN SHARED COLLISION'),to=html.indexOf('/* END SHARED PRANK PROPS */');
+assert(from>=0&&to>from,'physics source markers');
+const sandbox={};vm.createContext(sandbox);
+vm.runInContext(html.slice(from,to+'/* END SHARED PRANK PROPS */'.length)+"\nthis.api={BODY_RADIUS,SPAWN_POINTS,blocked,moveWithCollisions,blockedByPrankProps,defaultProps,chooseSpawn};",sandbox);
+const {BODY_RADIUS,SPAWN_POINTS,blocked,moveWithCollisions,blockedByPrankProps,defaultProps,chooseSpawn}=sandbox.api;
+assert(BODY_RADIUS>=24&&BODY_RADIUS<=34,'reasonable collision radius');
+for(const [x,y] of SPAWN_POINTS)assert(!blocked(x,y),'spawn is walkable');
+const props=defaultProps();
+assert(!blockedByPrankProps(props[0].x,props[0].y,props),'initial props do not block');
+props[0].version=2;
+assert(blockedByPrankProps(props[0].x,props[0].y,props),'placed chair blocks movement');
+const start=SPAWN_POINTS[0];
+const overlapping=[{id:'peer',x:start[0],y:start[1]}];
+const recovered=moveWithCollisions(start[0],start[1],start[0]+15,start[1],overlapping,'me');
+assert(!blocked(recovered.x,recovered.y,overlapping,'me'),'overlapping player can escape');
+for(let i=0;i<100;i++){
+ const p=chooseSpawn([],i),angle=i*2.3999;
+ const end=moveWithCollisions(p.x,p.y,p.x+Math.cos(angle)*250,p.y+Math.sin(angle)*250);
+ assert(!blocked(end.x,end.y),'movement ends in safe cell');
+}
+for(const fragment of ['usePropQuickBtn','objectUnderPointer','approachAndInteract','interactionContext','unstuckBtn','renderPrankUI'])assert(html.includes(fragment),'missing interaction '+fragment);
+console.log('Smoke tests passed: syntax, spawn, 100 movements, props and interactions.');

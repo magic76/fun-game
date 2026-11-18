@@ -23,7 +23,7 @@ jobs:
         run: node scripts/smoke-test.cjs
       - name: Generate V15 GLB character
         run: |
-          python -m pip install --disable-pip-version-check numpy trimesh
+          python -m pip install --disable-pip-version-check numpy scipy trimesh
           python scripts/build-v15-character.py
           test -s assets/yu-v15.glb
       - name: Configure Pages

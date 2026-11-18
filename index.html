@@ -109,6 +109,9 @@ html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none}
  .prop-cards{max-height:18dvh}
 }
 
+.use-prop-quick{bottom:calc(247px + env(safe-area-inset-bottom,0px));background:#8abbb0ee;border-color:#c2e4d0}
+@media(max-width:600px){.use-prop-quick{bottom:calc(220px + env(safe-area-inset-bottom,0px));right:12px}}
+@media(max-width:390px) and (max-height:700px){.use-prop-quick{bottom:calc(201px + env(safe-area-inset-bottom,0px))}}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
 
@@ -132,11 +135,12 @@ html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none}
           </svg>
         </div>
         <div id="toastStack" class="toasts" aria-live="polite"></div>
-        <div class="hint" id="stageTip">走近咖啡機、影印機、沙發，按「互動」</div>
+        <div class="hint" id="stageTip">走近人物或道具按「互動」，點物品會自動靠近</div>
         <div id="joystick" class="joystick" aria-label="虛擬移動搖桿"><div class="joystick-mark" id="joyKnob"></div></div>
         <button type="button" id="sprintBtn" class="sprint-btn" aria-pressed="false" title="手機點擊切換快跑；電腦按住 Shift">🏃 快跑</button>
         <button type="button" id="interactBtn" class="big-interact">✋ 互動</button>
         <button type="button" id="throwBtn" class="throw-btn" aria-label="丟出手上的道具">💨 丟出</button>
+        <button type="button" id="usePropQuickBtn" class="throw-btn use-prop-quick" aria-label="使用手上的道具">✨ 使用道具</button>
         <div id="propQuick" class="prop-quick" aria-live="polite">🧰 道具實驗室已就緒</div>
 <nav id="gameDock" class="game-dock" aria-label="遊戲功能選單">
   <button type="button" class="dock-btn" data-open-panel="propsPanel" aria-controls="propsPanel" aria-expanded="false"><span aria-hidden="true">🧰</span><small>道具</small></button>
@@ -152,7 +156,7 @@ html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none}
        <p class="prank-lead">撿起、丟出、組合。每個人在這裡都能搞出自己的荒謬事件。</p>
        <div id="propHeld" class="prop-held">雙手空空，繼續摸魚。</div><div id="propCards" class="prop-cards"></div>
        <div class="prank-buttons"><button type="button" id="propPickupBtn">✋ 拾取</button><button type="button" id="propUseBtn">✨ 使用</button><button type="button" id="propDropBtn">⬇ 放下</button><button type="button" id="propThrowBtn">💨 丟出</button></div>
-       <p class="prank-help">走近道具才能拾取，一次只能拿一件。手機按「互動」會優先撿取或使用；電腦 E 互動、Q 丟出。多人模式中道具位置會同步。</p>
+       <p class="prank-help">走近道具才能拾取，一次只能拿一件。手機按互動可撿取或與人互動；電腦 E 互動、R 使用道具、Q 丟出。多人模式中道具位置會同步。</p>
       </div>
       <div id="actionsPanel" class="panel actions-panel game-sheet" role="dialog" aria-modal="true" aria-label="角色動作" aria-hidden="true"><div class="sheet-head"><div><span class="sheet-kicker">OFFICE EMOTES</span><b>今天怎麼摸魚？</b></div><button type="button" class="sheet-close" data-close-panel aria-label="關閉動作選單">✕</button></div><div class="panel-label"><small>選一個動作，讓其他同事看到</small></div><div class="actions">
         <button type="button" class="action-btn selected" data-pose="idle">🚶 <span>走動</span></button>
@@ -176,7 +180,7 @@ html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none}
       <div class="setting-item"><div><strong>鏡頭距離</strong><small>依照你的螢幕切換遠近</small></div><button id="zoomBtn" type="button" class="setting-btn">切換近景</button></div>
       <div class="setting-item"><div><strong>全螢幕顯示</strong><small>支援的瀏覽器可以隱藏額外介面</small></div><button id="fullscreenBtn" type="button" class="setting-btn">開啟</button></div>
       <div class="setting-item"><div><strong>邀請真人同事</strong><small>多人模式分享相同房號才會碰面</small></div><button id="shareInMenu" type="button" class="setting-btn">複製連結</button></div>
-      <div class="setting-help"><strong>操作提示</strong><p>電腦：WASD／方向鍵移動、按住 Shift 快跑、E 互動；點地面也能移動。手機：左下搖桿移動，按「快跑」可切換疾走，右下「互動」。</p><p>七種惡搞道具在「道具」選單查看。摸魚留言可在「秘笈」查看；相同房間內兩個真人一起躺平，會觸發集體事件。</p></div>
+      <div class="setting-help"><strong>操作提示</strong><p>電腦：WASD／方向鍵移動、Shift 快跑、E 互動、R 使用道具、Q 丟出；點角色或道具可自動靠近。手機：左下搖桿移動，按「快跑」可切換疾走，右下「互動」。</p><p>七種惡搞道具在「道具」選單查看。摸魚留言可在「秘笈」查看；相同房間內兩個真人一起躺平，會觸發集體事件。</p></div>
       <button id="switchRoomBtn" type="button" class="switch-room-btn">退出公司並重新選房間</button>
     </section>
   </aside>
@@ -209,7 +213,7 @@ const WORLD={w:8640,h:5520},STATIONS=[{id:'coffee',x:3958,y:2687,title:'茶水�
  * Avatar footprint is a circle; obstacles are axis-aligned rectangles or circles.
  * All building meshes are static; this module has no Three.js dependency.
  */
-const BODY_RADIUS = 34;
+const BODY_RADIUS = 27;
 const WALK_BOUNDS = {minX:63,maxX:8577,minY:82,maxY:5438};
 const BASE_SHIFT={x:3240,y:2070};
 const V6_OBSTACLES = [
@@ -330,29 +334,41 @@ function blocked(x,y,people=[],ignoreId=null){
   }
   return false;
 }
-/** Continuous-ish sweep in <= 9px increments + axis-separated slide, avoiding tunneling. */
-function moveWithCollisions(fromX,fromY,toX,toY,people=[],ignoreId=null){
+/** Slide against furniture, players and placed props in one collision pass.
+ * Recover from a stale/overlapping start instead of permanently locking movement. */
+function moveWithCollisions(fromX,fromY,toX,toY,people=[],ignoreId=null,extraBlocked=null){
+  const collides=(x,y)=>blocked(x,y,people,ignoreId)||(extraBlocked?extraBlocked(x,y):false);
   let x=fromX,y=fromY;
   if(!Number.isFinite(toX)||!Number.isFinite(toY))return {x,y,hit:true};
-  const dx=toX-fromX,dy=toY-fromY,steps=Math.max(1,Math.ceil(Math.hypot(dx,dy)/9));
-  // Invalid starting positions can arise when an old client joins; don't push further inside.
-  if(blocked(x,y,people,ignoreId))return {x,y,hit:true};
-  let hit=false;
+  let recovered=false;
+  if(collides(x,y)){
+    // An incoming player or newly placed object can overlap us; choose the closest open point.
+    outer:for(let dist=6;dist<=192;dist+=6){
+      for(let a=0;a<32;a++){
+        const theta=a*Math.PI/16,tx=fromX+Math.cos(theta)*dist,ty=fromY+Math.sin(theta)*dist;
+        if(!collides(tx,ty)){x=tx;y=ty;recovered=true;break outer}
+      }
+    }
+    if(!recovered)return {x,y,hit:true};
+  }
+  const dx=toX-fromX,dy=toY-fromY,steps=Math.max(1,Math.ceil(Math.hypot(dx,dy)/7));
+  let hit=recovered;
   for(let i=0;i<steps;i++){
     const sx=dx/steps,sy=dy/steps;
-    if(!blocked(x+sx,y+sy,people,ignoreId)){x+=sx;y+=sy;continue}
+    if(!collides(x+sx,y+sy)){x+=sx;y+=sy;continue}
     hit=true;
-    // Slide along the wall without moving through its corners.
+    // Separated-axis sliding; horizontal and vertical alternatives stay inside valid space.
     if(Math.abs(sx)>=Math.abs(sy)){
-      if(!blocked(x+sx,y,people,ignoreId))x+=sx;
-      if(!blocked(x,y+sy,people,ignoreId))y+=sy;
+      if(!collides(x+sx,y))x+=sx;
+      if(!collides(x,y+sy))y+=sy;
     }else{
-      if(!blocked(x,y+sy,people,ignoreId))y+=sy;
-      if(!blocked(x+sx,y,people,ignoreId))x+=sx;
+      if(!collides(x,y+sy))y+=sy;
+      if(!collides(x+sx,y))x+=sx;
     }
   }
   return {x:Math.round(x*1000)/1000,y:Math.round(y*1000)/1000,hit};
 }
+
 function chooseSpawn(people=[],salt=0){
   for(let i=0;i<SPAWN_POINTS.length;i++){
     const spot=SPAWN_POINTS[(i+Math.abs(Math.floor(salt)))%SPAWN_POINTS.length];
@@ -436,7 +452,7 @@ const SOLID_PROP_RADIUS={chair:45,box:43};
 function blockedByPrankProps(x,y,props){
  for(const p of props){
    const r=SOLID_PROP_RADIUS[p.kind];
-   if(r&&!p.holder&&propDistance(p,{x,y})<r+34-0.01)return true;
+   if(r&&p.version>0&&!p.holder&&propDistance(p,{x,y})<r+BODY_RADIUS-0.01)return true;
  }
  return false;
 }
@@ -1367,26 +1383,67 @@ function buildPrankProps(){
  scene.add(fan);prankFan={bladeGroup,placard};
 }
 function nearestPrank(){if(!me)return null;let found=null;for(const p of prankProps){if(p.holder)continue;const d=propDistance(p,me);if(!found||d<found.d)found={p,d}}return found}
+function nearestPerson(){
+ if(!me)return null;
+ let found=null;
+ for(const p of players.values()){
+  if(p.id===myId)continue;
+  const d=propDistance(p,me);
+  if(!found||d<found.d)found={p,d};
+ }
+ const supervisor=bossAt(roomOpened,Date.now());
+ if(supervisor){const d=propDistance(supervisor,me);if(!found||d<found.d)found={p:{...supervisor,name:'主管'},d};}
+ return found;
+}
+function targetById(type,itemId){
+ if(type==='prop')return prankProps.find(p=>p.id===itemId&&!p.holder)||null;
+ if(type==='person')return itemId==='__boss__'?bossAt(roomOpened,Date.now()):players.get(itemId)||null;
+ if(type==='station')return STATIONS.find(p=>p.id===itemId)||null;
+ return null;
+}
+function interactionContext(){
+ if(!joined||!me)return null;
+ const held=playerHasProp(prankProps,myId),nearProp=!held?nearestPrank():null,nearNPC=nearestPerson(),station=nearestStation();
+ const choices=[];
+ if(nearProp&&nearProp.d<=PROP_PICKUP_RADIUS)choices.push({type:'prop',id:nearProp.p.id,label:'拾取 '+PRANK_KINDS[nearProp.p.kind].name,d:nearProp.d,reach:PROP_PICKUP_RADIUS});
+ if(nearNPC&&nearNPC.d<=150)choices.push({type:'person',id:nearNPC.p.id,label:nearNPC.p.id==='__boss__'?'向主管裝忙':'跟 '+safeName(nearNPC.p.name)+' 打招呼',d:nearNPC.d,reach:150});
+ if(station&&station.d<=155)choices.push({type:'station',id:station.id,label:station.label,d:station.d,reach:155});
+ return choices.sort((a,b)=>a.d/a.reach-b.d/b.reach)[0]||null;
+}
+function performContext(context){
+ if(!context)return false;
+ if(context.type==='prop'){triggerPrank('pickup',context.id);return true}
+ if(context.type==='station'){changePose(context.id);return true}
+ if(context.type==='person'){
+  if(context.id==='__boss__'){changePose('busy');toast('主管來啦！趕快假裝在工作');}
+  else {changePose('wave');toast('👋 跟 '+safeName(players.get(context.id)?.name)+' 打招呼！');}
+  return true;
+ }
+ return false;
+}
 function renderPrankUI(){
- const joinedNow=joined&&!!me,held=joinedNow?playerHasProp(prankProps,myId):null,closest=joinedNow?nearestPrank():null;
- const quick=$('propQuick'),nearEnough=closest&&closest.d<=PROP_PICKUP_RADIUS;
- quick.textContent=held?`🧰 手持 ${PRANK_KINDS[held.kind].icon} ${PRANK_KINDS[held.kind].name} · E 使用 / Q 丟出`:nearEnough?`${PRANK_KINDS[closest.p.kind].icon} 靠近「${PRANK_KINDS[closest.p.kind].name}」· E 拾取`:'🧰 尋找散落在辦公室的搞事道具';
- $('interactBtn').textContent=held?'✨ 使用':nearEnough?'✋ 拾取':'✋ 互動';
+ const joinedNow=joined&&!!me,held=joinedNow?playerHasProp(prankProps,myId):null,closest=joinedNow?nearestPrank():null,context=interactionContext();
+ const nearEnough=closest&&closest.d<=PROP_PICKUP_RADIUS;
+ $('propQuick').textContent=context?'✨ E 互動：'+context.label:held?
+   '🧰 手持 '+PRANK_KINDS[held.kind].name+' · R 使用 / Q 丟出':
+   '🧰 走近道具或同事，點物件也可自動靠近';
+ $('interactBtn').textContent=context?'✨ '+context.label:held?'✨ 使用道具':'✋ 互動';
  $('throwBtn').style.display=held?'block':'none';
- $('propHeld').textContent=held?`正在拿：${PRANK_KINDS[held.kind].icon} ${PRANK_KINDS[held.kind].name} · ${PRANK_KINDS[held.kind].hint}`:'目前雙手空空 · 走近道具，或直接點遊戲中的「互動」';
+ $('propHeld').textContent=held?'正在拿：'+PRANK_KINDS[held.kind].icon+' '+PRANK_KINDS[held.kind].name+' · '+PRANK_KINDS[held.kind].hint:'目前雙手空空 · 走近物品後按「互動」拾取';
  for(const [id,enabled] of [['propPickupBtn',!!nearEnough&&!held],['propUseBtn',!!held],['propDropBtn',!!held],['propThrowBtn',!!held]])$(id).disabled=!joinedNow||!enabled;
+ // The list only needs DOM work while the prop sheet is visible.
+ if(activeSheet!=='propsPanel')return;
  const list=$('propCards');list.replaceChildren();
- for(const p of [...prankProps].sort((a,b)=>{const da=joinedNow?propDistance(a,me):0,db=joinedNow?propDistance(b,me):0;return da-db}).slice(0,7)){
-  const el=document.createElement('button');el.type='button';el.className='prop-card';
-  const d=joinedNow?Math.round(propDistance(p,me)):0;
+ for(const p of [...prankProps].sort((a,b)=>(joinedNow?propDistance(a,me)-propDistance(b,me):0)).slice(0,7)){
+  const el=document.createElement('button');el.type='button';el.className='prop-card';const d=joinedNow?Math.round(propDistance(p,me)):0;
   const owner=p.holder?players.get(p.holder)?.name||(p.holder===myId?ownName:'其他同事'):null;
-  el.textContent=`${PRANK_KINDS[p.kind].icon} ${PRANK_KINDS[p.kind].name} · ${owner?`被 ${owner} 拿著`:d<=PROP_PICKUP_RADIUS?'就在附近':`${d} 距離`}`;
+  el.textContent=PRANK_KINDS[p.kind].icon+' '+PRANK_KINDS[p.kind].name+' · '+(owner?'被 '+owner+' 拿著':d<=PROP_PICKUP_RADIUS?'就在附近':d+' 距離');
   el.disabled=!!p.holder||!joinedNow||d>PROP_PICKUP_RADIUS||!!held;
-  if(!el.disabled)el.addEventListener('click',()=>triggerPrank('pickup',p.id));
-  list.append(el);
+  if(!el.disabled)el.addEventListener('click',()=>triggerPrank('pickup',p.id));list.append(el);
  }
 }
-let lastDemoPrank=0,lastPrankUse=0,lastBananaSlip=0;
+
+let pendingInteract=null,lastDemoPrank=0,lastPrankUse=0,lastBananaSlip=0;
 function triggerPrank(op,itemId){
  if(!joined||!me){toast('先打卡進公司再搞事！');return}
  const held=playerHasProp(prankProps,myId),nearest=nearestPrank();
@@ -1429,7 +1486,7 @@ function updatePrankScene(dt,elapsed){
   const face=Number.isFinite(carrier?.facing)?carrier.facing:0;
   m.flight=Math.max(0,(m.flight||0)-dt*2.3);
   const lift=carrier ? .98+Math.sin(elapsed*5)*.055 : m.flight ? Math.sin((1-m.flight)*Math.PI)*1.35 : 0;
-  m.root.position.set(m.px+(carrier?Math.cos(face)*.75:0),lift,m.pz+(carrier?-Math.sin(face)*.75:0));
+  m.root.position.set(m.px+(carrier?Math.sin(face)*.78:0),lift,m.pz+(carrier?Math.cos(face)*.78:0));
   m.root.scale.setScalar(carrier ? .72 : 1);
   m.model.rotation.y=carrier?elapsed*.12:Math.sin(elapsed*.6+p.id.length)*.055;
   m.tag.visible=!carrier;m.ring.visible=!carrier;
@@ -1489,7 +1546,8 @@ function checkDemoPrankSlip(){
 for(const [id,op] of [['propPickupBtn','pickup'],['propUseBtn','use'],['propDropBtn','drop'],['propThrowBtn','throw']])$(id).addEventListener('click',()=>triggerPrank(op));
 
 function frame(now){if(!renderer||!scene)return;const dt=Math.min(.05,(now-lastClock)/1000||.016);lastClock=now;
- if(joined&&me){tickMove(dt);}
+ if(joined&&me){tickMove(dt);if(pendingInteract){const target=targetById(pendingInteract.type,pendingInteract.id);if(!target){pendingInteract=null;}else if(propDistance(target,me)<(pendingInteract.type==='prop'?PROP_PICKUP_RADIUS-10:140)){const context={...pendingInteract};pendingInteract=null;destination=null;waypoints=[];performContext(context);}else if(!waypoints.length){pendingInteract=null;}}
+ if(now-lastPrankUI>280){lastPrankUI=now;renderPrankUI();}}
  const elapsed=(Date.now()-roomOpened)/1000;updateBoss(now,elapsed);
  const p=me?coord(me.x,me.y):{x:0,z:0};const target=new THREE.Vector3(clamp(p.x,-50.1,50.1),0,clamp(p.z,-31.7,31.7));updateDistrictVisibility(p.x,p.z);cameraTarget.lerp(target,Math.min(1,dt*(moving?4.9:3.1)));
  if(sunFollow){sunFollow.position.set(cameraTarget.x-3,cameraTarget.y+12,cameraTarget.z+8);sunFollow.target.position.set(cameraTarget.x,0,cameraTarget.z);}
@@ -1544,6 +1602,18 @@ $('fullscreenBtn').addEventListener('click',async()=>{
 });
 document.addEventListener('fullscreenchange',()=>{$('fullscreenBtn').textContent=document.fullscreenElement?'退出':'開啟';resizeScene()});
 $('shareInMenu').addEventListener('click',()=>$('shareBtn').click());
+const unstuckBtn=document.createElement('button');unstuckBtn.type='button';unstuckBtn.className='switch-room-btn';unstuckBtn.style.marginBottom='9px';unstuckBtn.textContent='🛟 被卡住？移到安全位置';$('switchRoomBtn').before(unstuckBtn);
+unstuckBtn.addEventListener('click',()=>{
+ if(!joined||!me)return;
+ if(!USE_DEMO){toast('多人模式請回報卡點，避免瞬移影響公平');return}
+ const others=[...players.values()].filter(p=>p.id!==myId),here={x:me.x,y:me.y};let safe=null;
+ for(let r=30;r<360&&!safe;r+=25)for(let a=0;a<24;a++){
+  const x=here.x+r*Math.cos(a*Math.PI/12),y=here.y+r*Math.sin(a*Math.PI/12);
+  if(!blocked(x,y,others,myId)&&!blockedByPrankProps(x,y,prankProps)){safe={x,y};break}
+ }
+ safe=safe||chooseSpawn(others,0);me.x=safe.x;me.y=safe.y;
+ destination=null;waypoints=[];pendingInteract=null;send({type:'move',x:me.x,y:me.y});closeSheet();toast('🛟 已移到附近安全位置');
+});
 $('switchRoomBtn').addEventListener('click',()=>{if(confirm('確定退出目前房間，重新選擇暱稱和房號？'))location.reload()});
 
 /* ————— Interaction controls ————— */
@@ -1555,7 +1625,14 @@ function changePose(action){if(!joined||!me){toast('先打卡進公司');return}
  if(action!=='idle')toast({nap:'啟動人體節電模式…',coffee:'假裝這杯咖啡需要研究半小時。',copy:'假裝印表機是你的專案。',dance:'歡迎收看辦公室最強尬舞。',wave:'你好，今天有打算做事嗎？',busy:'你看起來真的很忙。',stretch:'肩頸按摩費請向公司報帳。',facepalm:'今日工作進度：已經開始懷疑人生。'}[action]||ACTIONS[action]);
 }
 function setActionButtons(){document.querySelectorAll('.action-btn').forEach(b=>b.classList.toggle('selected',b.dataset.pose===me?.action))}
-function interact(){if(!joined||!me){toast('先打卡進公司');return}const held=playerHasProp(prankProps,myId);if(held){triggerPrank('use');return}const nearest=nearestPrank();if(nearest&&nearest.d<=PROP_PICKUP_RADIUS){triggerPrank('pickup',nearest.p.id);return}const s=nearestStation();if(!s||s.d>135){toast('再靠近咖啡機、影印機或沙發');return}changePose(s.id);$('stageTip').textContent='你正在'+s.label+'；找其他真人一起搞事！'}
+function interact(){
+ if(!joined||!me){toast('先打卡進公司');return}
+ const context=interactionContext();
+ if(context){performContext(context);return}
+ if(playerHasProp(prankProps,myId)){triggerPrank('use');return}
+ toast('走近道具、人物、咖啡機、影印機或沙發再互動');
+}
+
 function tickMove(dt){
  if(activeSheet){moving=false;actualMoveSpeed=0;smoothedGroundSpeed=0;return}
  let dx=0,dy=0;
@@ -1563,7 +1640,7 @@ function tickMove(dt){
  if(keys.has('a')||keys.has('arrowleft'))dx-=1;if(keys.has('d')||keys.has('arrowright'))dx+=1;
  dx+=joy.x;dy+=joy.y;
  const manual=Math.abs(dx)+Math.abs(dy)>.05;
- if(manual){destination=null;waypoints=[]}
+ if(manual){destination=null;waypoints=[];pendingInteract=null}
  else if(waypoints.length){
    const t=waypoints[0],ddx=t.x-me.x,ddy=t.y-me.y,d=Math.hypot(ddx,ddy);
    if(d<14){waypoints.shift();if(!waypoints.length)destination=null;moving=false;actualMoveSpeed=0;return}
@@ -1577,11 +1654,10 @@ function tickMove(dt){
  smoothedGroundSpeed+=(targetSpeed-smoothedGroundSpeed)*Math.min(1,dt*10);
  const speed=Math.min(targetSpeed,smoothedGroundSpeed);
  const targetX=me.x+dx*speed*dt,targetY=me.y+dy*speed*dt;
- const staticNext=moveWithCollisions(me.x,me.y,targetX,targetY,others,myId);
- const next=slideAgainstPrankProps(me.x,me.y,staticNext.x,staticNext.y,prankProps);
+ const next=moveWithCollisions(me.x,me.y,targetX,targetY,others,myId,(x,y)=>blockedByPrankProps(x,y,prankProps));
  const advanced=Math.hypot(next.x-me.x,next.y-me.y);
  moving=advanced>.03;actualMoveSpeed=advanced/Math.max(dt,.001);
- if(!moving&&waypoints.length){stuckFor+=dt;if(stuckFor>.25){waypoints=[];destination=null;stuckFor=0;$('stageTip').textContent='前方有障礙物，改用方向鍵繞過去'}}
+ if(!moving&&waypoints.length){stuckFor+=dt;if(stuckFor>.45){waypoints=[];destination=null;pendingInteract=null;stuckFor=0;$('stageTip').textContent='前方卡住了，可換方向或在設定點「脫困」'}}
  else stuckFor=0;
  if(!moving)return;
  me.x=next.x;me.y=next.y;
@@ -1590,7 +1666,7 @@ function tickMove(dt){
  if(performance.now()-sendAt>95){sendAt=performance.now();send({type:'move',x:me.x,y:me.y})}
  checkDemoPrankSlip();
  const s=nearestStation();if(s&&s.d<135)$('stageTip').textContent=`靠近 ${s.title}：按「互動」${s.label}`;
- if(performance.now()-lastPrankUI>220){lastPrankUI=performance.now();renderPrankUI();}
+ // Interaction HUD is updated by frame() even when the player stands still.
 }
 function hitGround(clientX,clientY){if(!camera||!THREE)return null;const rect=$('sceneCanvas').getBoundingClientRect();const v=new THREE.Vector2((clientX-rect.left)/rect.width*2-1,-((clientY-rect.top)/rect.height*2-1));const ray=new THREE.Raycaster();ray.setFromCamera(v,camera);const target=new THREE.Vector3();return ray.ray.intersectPlane(groundPlane,target)?pixel(target.x,target.z):null}
 // Tap-to-walk: grid-based A* across shared solid geometry, no walking through desks.
@@ -1654,18 +1730,46 @@ joyPad.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation()
 joyPad.addEventListener('pointermove',e=>{if(e.pointerId===joy.pid)updateJoy(e)});
 function resetJoy(e){if(e.pointerId===joy.pid){joy={x:0,y:0,pid:null};joyKnob.style.transform='translate(0px,0px)'}}
 for(const ev of ['pointerup','pointercancel','lostpointercapture'])joyPad.addEventListener(ev,resetJoy);
-$('sceneCanvas').addEventListener('pointerdown',e=>{if(!joined||!me||activeSheet)return;const p=hitGround(e.clientX,e.clientY);if(!p)return;
- const board=coord(4732,2424);if(Math.hypot(p.x-4732,p.y-2424)<125){openSheet('notesPanel');toast('打開摸魚留言牆');return}
- const others=[...players.values()].filter(player=>player.id!==myId);
- const supervisor=bossAt(roomOpened,Date.now());if(supervisor)others.push(supervisor);
- waypoints=planWalkPath(me.x,me.y,p.x,p.y,others);
- destination=waypoints.length?{x:p.x,y:p.y}:null;
- if(!waypoints.length)$('stageTip').textContent='目的地被擋住了，換個位置試試看';
+function objectUnderPointer(clientX,clientY){
+ if(!camera||!THREE)return null;
+ const rect=$('sceneCanvas').getBoundingClientRect();
+ const pointer=new THREE.Vector2((clientX-rect.left)/rect.width*2-1,-((clientY-rect.top)/rect.height*2-1));
+ const ray=new THREE.Raycaster();ray.setFromCamera(pointer,camera);
+ const roots=[];
+ for(const [id,m] of prankMeshes){const prop=prankProps.find(p=>p.id===id);if(prop&&!prop.holder&&m.root.visible)roots.push({type:'prop',id,root:m.root});}
+ for(const [id,a] of avatars){if(id!==myId&&a.root.visible)roots.push({type:'person',id,root:a.root});}
+ if(boss?.root.visible)roots.push({type:'person',id:'__boss__',root:boss.root});
+ const intersections=ray.intersectObjects(roots.map(r=>r.root),true);
+ for(const hit of intersections){let node=hit.object;while(node){const selected=roots.find(r=>r.root===node);if(selected)return {type:selected.type,id:selected.id};node=node.parent}}
+ return null;
+}
+function approachAndInteract(target){
+ const at=targetById(target.type,target.id);if(!at||!me)return;
+ const reach=target.type==='prop'?PROP_PICKUP_RADIUS:150,d=propDistance(at,me);
+ if(d<=reach-8){performContext(target);return}
+ const away=Math.max(50,reach-35),dx=(me.x-at.x)/d,dy=(me.y-at.y)/d;
+ const goal={x:at.x+dx*away,y:at.y+dy*away};
+ const others=[...players.values()].filter(p=>p.id!==myId),supervisor=bossAt(roomOpened,Date.now());if(supervisor)others.push(supervisor);
+ waypoints=planWalkPath(me.x,me.y,goal.x,goal.y,others);
+ if(!waypoints.length){toast('前面有障礙，請從側面靠近');return}
+ pendingInteract=target;destination=goal;toast('🚶 正在靠近 '+(target.type==='person'?'同事':'道具')+'…');
+}
+$('sceneCanvas').addEventListener('pointerdown',e=>{
+ if(!joined||!me||activeSheet)return;
+ const selected=objectUnderPointer(e.clientX,e.clientY);
+ if(selected){approachAndInteract(selected);return}
+ const p=hitGround(e.clientX,e.clientY);if(!p)return;
+ if(Math.hypot(p.x-4732,p.y-2424)<125){openSheet('notesPanel');return}
+ pendingInteract=null;
+ const others=[...players.values()].filter(player=>player.id!==myId),supervisor=bossAt(roomOpened,Date.now());if(supervisor)others.push(supervisor);
+ waypoints=planWalkPath(me.x,me.y,p.x,p.y,others);destination=waypoints.length?{x:p.x,y:p.y}:null;
+ if(!waypoints.length)$('stageTip').textContent='目的地被擋住了，可改點通道或用搖桿';
 });
-document.addEventListener('keydown',e=>{if(activeSheet||!$('joinOverlay').classList.contains('hidden')||e.target.matches('input,textarea,[contenteditable]'))return;let key=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','shift','e','q',' '].includes(key)){e.preventDefault();keys.add(key)}if(key==='e'&&!e.repeat)interact();if(key==='q'&&!e.repeat)triggerPrank('throw');if(key===' '&&!e.repeat)changePose('busy')});
+
+document.addEventListener('keydown',e=>{if(activeSheet||!$('joinOverlay').classList.contains('hidden')||e.target.matches('input,textarea,[contenteditable]'))return;let key=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','shift','e','q','r',' '].includes(key)){e.preventDefault();keys.add(key)}if(key==='e'&&!e.repeat)interact();if(key==='q'&&!e.repeat)triggerPrank('throw');if(key==='r'&&!e.repeat)triggerPrank('use');if(key===' '&&!e.repeat)changePose('busy')});
 document.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
 window.addEventListener('blur',()=>{keys.clear();joy={x:0,y:0,pid:null};joyKnob.style.transform='translate(0px,0px)'});
-window.addEventListener('resize',resizeScene);window.visualViewport?.addEventListener('resize',resizeScene);if(typeof ResizeObserver!=='undefined')new ResizeObserver(()=>resizeScene()).observe($('sceneCanvas'));$('interactBtn').addEventListener('click',interact);$('throwBtn').addEventListener('click',()=>triggerPrank('throw'));
+window.addEventListener('resize',resizeScene);window.visualViewport?.addEventListener('resize',resizeScene);if(typeof ResizeObserver!=='undefined')new ResizeObserver(()=>resizeScene()).observe($('sceneCanvas'));$('interactBtn').addEventListener('click',interact);$('throwBtn').addEventListener('click',()=>triggerPrank('throw'));$('usePropQuickBtn').addEventListener('click',()=>triggerPrank('use'));
 document.querySelectorAll('.action-btn').forEach(b=>b.addEventListener('click',()=>{changePose(b.dataset.pose);if(joined)closeSheet()}));
 $('colors').addEventListener('click',e=>{const b=e.target.closest('button[data-color]');if(!b)return;ownColor=b.dataset.color;$('colors').querySelectorAll('button').forEach(el=>el.classList.toggle('active',el===b))});
 $('nick').addEventListener('keydown',e=>{if(e.key==='Enter')join()});$('roomInput').addEventListener('keydown',e=>{if(e.key==='Enter')join()});

@@ -21,6 +21,11 @@ jobs:
         uses: actions/checkout@v4
       - name: Verify game logic and JavaScript
         run: node scripts/smoke-test.cjs
+      - name: Generate V15 GLB character
+        run: |
+          python -m pip install --disable-pip-version-check numpy trimesh
+          python scripts/build-v15-character.py
+          test -s assets/yu-v15.glb
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:

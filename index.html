@@ -1619,7 +1619,7 @@ $('switchRoomBtn').addEventListener('click',()=>{if(confirm('確定退出目前�
 /* ————— Interaction controls ————— */
 function changePose(action){if(!joined||!me){toast('先打卡進公司');return}if(!ACTIONS[action])return;
  if(['coffee','copy','nap'].includes(action)){
-  const station=STATIONS.find(s=>s.id===action);if(!near(station,me)){toast('走近'+station.title+'才能做這個動作');return}
+  const station=STATIONS.find(s=>s.id===action);if(Math.hypot(station.x-me.x,station.y-me.y)>155){toast('走近'+station.title+'才能做這個動作');return}
  }
  me.action=action;setActionButtons();send({type:'action',action});
  if(action!=='idle')toast({nap:'啟動人體節電模式…',coffee:'假裝這杯咖啡需要研究半小時。',copy:'假裝印表機是你的專案。',dance:'歡迎收看辦公室最強尬舞。',wave:'你好，今天有打算做事嗎？',busy:'你看起來真的很忙。',stretch:'肩頸按摩費請向公司報帳。',facepalm:'今日工作進度：已經開始懷疑人生。'}[action]||ACTIONS[action]);
@@ -1747,7 +1747,7 @@ function approachAndInteract(target){
  const at=targetById(target.type,target.id);if(!at||!me)return;
  const reach=target.type==='prop'?PROP_PICKUP_RADIUS:150,d=propDistance(at,me);
  if(d<=reach-8){performContext(target);return}
- const away=Math.max(50,reach-35),dx=(me.x-at.x)/d,dy=(me.y-at.y)/d;
+ const away=Math.max(50,reach-58),dx=(me.x-at.x)/d,dy=(me.y-at.y)/d;
  const goal={x:at.x+dx*away,y:at.y+dy*away};
  const others=[...players.values()].filter(p=>p.id!==myId),supervisor=bossAt(roomOpened,Date.now());if(supervisor)others.push(supervisor);
  waypoints=planWalkPath(me.x,me.y,goal.x,goal.y,others);

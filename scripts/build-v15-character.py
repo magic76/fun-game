@@ -77,7 +77,7 @@ for side,parent in [(-1,'LeftLeg'),(1,'RightLeg')]:
  ell(side*.023,-1.397,.143,.157,.037,.256,'sole','Sole',parent)
  tube([[side*.023-.08,-1.265,.329],[side*.023,-1.26,.361],[side*.023+.08,-1.265,.329]],.013,'jacket_dark','ShoeEdge',parent)
 loft([(-.34,0,.03,.19,.13),(-.23,0,.02,.264,.205),(-.08,0,-.01,.332,.254),(.12,0,-.018,.356,.283),(.32,0,-.023,.331,.270),(.42,0,-.05,.253,.210)],'skin','Face','HeadPivot',40)
-ell(0,-.23,.205,.20,.079,.067,'skin','Chin','HeadPivot')
+# V15 face jaw is integrated: no protruding bead chin.
 for side in [-1,1]:
  ell(side*.335,-.038,-.038,.067,.104,.064,'skin','Ear','HeadPivot')
  ell(side*.145,.075,.259,.097,.065,.045,'eye','EyeWhite','HeadPivot')
@@ -85,10 +85,10 @@ for side in [-1,1]:
  ell(side*.154,.071,.309,.032,.042,.013,'pupil','Pupil','HeadPivot')
  ell(side*.170,.092,.32,.014,.017,.006,'eye','EyeLight','HeadPivot')
  tube([[side*.07,.132,.279],[side*.153,.157,.286],[side*.234,.130,.257]],.012,'eyeline','EyeLid','HeadPivot')
- tube([[side*.069,.247,.244],[side*.14,.263,.268],[side*.235,.234,.227]],.013,'hair','Brow','HeadPivot')
+ tube([[side*.090,.225,.239],[side*.14,.238,.259],[side*.208,.218,.224]],.009,'hair','Brow','HeadPivot')
  ell(side*.255,-.11,.222,.063,.035,.015,'blush','Blush','HeadPivot')
 ell(0,-.06,.272,.026,.042,.041,'skin_shade','Nose','HeadPivot')
-tube([[-.083,-.188,.256],[-.045,-.211,.277],[0,-.218,.282],[.045,-.211,.277],[.083,-.188,.256]],.011,'pink','Smile','HeadPivot')
+tube([[-.054,-.18,.250],[-.025,-.196,.266],[0,-.201,.270],[.025,-.196,.266],[.054,-.18,.250]],.007,'pink','Smile','HeadPivot')
 loft([(.18,0,-.08,.345,.27),(.31,0,-.065,.345,.268),(.44,0,-.065,.315,.245),(.51,0,-.062,.17,.12)],'hair','HairCrown','HeadPivot',44)
 loft([(-.43,0,-.16,.24,.17),(-.25,0,-.15,.29,.18),(.08,0,-.12,.36,.215),(.38,0,-.09,.345,.22)],'hair','BackHair','HeadPivot')
 for side in [-1,1]:

@@ -1,0 +1,83 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#eff2eb"><title>V14 Character Lab — 小羽 / 重新設計</title><style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:system-ui,"Noto Sans TC",sans-serif;background:#e7eee8;color:#273b39}canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}header{position:fixed;z-index:3;top:calc(15px + env(safe-area-inset-top));left:16px;right:16px;pointer-events:none}header .name{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.16em;color:#477469;background:#f5faf0cc;padding:7px 12px;border-radius:99px;backdrop-filter:blur(10px)}h1{font-size:25px;letter-spacing:-.04em;margin:11px 0 3px}header p{font-size:12px;margin:0;color:#526968;max-width:250px;line-height:1.65}.note{position:fixed;left:0;right:0;bottom:calc(106px + env(safe-area-inset-bottom));z-index:3;text-align:center;color:#536f69;font-size:12px;pointer-events:none;text-shadow:0 1px #fff}.dock{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(15px + env(safe-area-inset-bottom));z-index:4;display:flex;justify-content:center;gap:7px;flex-wrap:wrap;width:calc(100% - 24px);max-width:680px}button,.back{border:1px solid #b9d0c7;border-radius:14px;background:#fffffff0;color:#31564e;padding:12px 14px;min-height:45px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;text-decoration:none;box-shadow:0 4px 12px #49665b22}button.active{background:#426c61;color:white;border-color:#426c61}button:focus-visible,.back:focus-visible{outline:3px solid #efb976}.back{position:fixed;z-index:5;top:calc(14px + env(safe-area-inset-top));right:16px;font-size:12px;padding:10px 13px}.error{display:none;position:fixed;z-index:8;inset:30% 15px auto 15px;background:#513b3b;color:white;padding:22px;border-radius:16px;white-space:pre-wrap}#status{position:fixed;z-index:4;bottom:calc(80px + env(safe-area-inset-bottom));left:0;right:0;text-align:center;font-size:11px;color:#6c827e;pointer-events:none}@media(max-width:580px){h1{font-size:22px}.dock{gap:6px;bottom:calc(10px + env(safe-area-inset-bottom))}button{font-size:12px;padding:10px 12px}.note{bottom:calc(120px + env(safe-area-inset-bottom))}header p{max-width:230px}}</style></head><body>
+<canvas id="view"></canvas><header><span class="name">V14 · CHARACTER LAB</span><h1>小羽 / YU</h1><p>全新人物輪廓 · 有表情的臉 · 服裝細節<br>這是單一人物原型，不影響主遊戲。</p></header><a class="back" href="./">主遊戲 ↗</a><p class="note">拖動畫面旋轉角色 · 雙指縮放</p><div id="status">載入 3D 角色中…</div><div class="dock"><button data-view="front" class="active">正面</button><button data-view="side">側面</button><button data-view="back">背面</button><button id="rotate">自動旋轉</button><button id="zoom">放大細節</button></div><pre id="error" class="error"></pre>
+<script type="module">
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
+const canvas=document.querySelector("#view"),scene=new THREE.Scene();scene.background=new THREE.Color("#dce9e3");
+const camera=new THREE.PerspectiveCamera(36,1,.1,60);
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:"high-performance",alpha:false});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.65));renderer.setClearColor("#dce9e3");
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.5;renderer.outputColorSpace=THREE.SRGBColorSpace;
+scene.add(new THREE.HemisphereLight(0xffffff,0x8baba3,2.15));
+const key=new THREE.DirectionalLight(0xfff0dc,2.6);key.position.set(-4,8,6);key.castShadow=true;key.shadow.mapSize.set(1024,1024);key.shadow.bias=-.0002;key.shadow.camera.left=-5;key.shadow.camera.right=5;key.shadow.camera.top=7;key.shadow.camera.bottom=-6;scene.add(key);
+const rim=new THREE.DirectionalLight(0xc1e6de,1.3);rim.position.set(4,6,-6);scene.add(rim);
+const C={skin:0xfac49e,skinDeep:0xdf9e83,cheek:0xf19b91,hair:0x423333,shine:0x876457,coat:0x879fa0,coatDark:0x6a8587,cream:0xf8f1e2,inner:0xeadbc7,pants:0x3f505b,shoes:0xf0e9dc,sole:0xc9c6be,brown:0x504044,eye:0xfffcf1,lips:0xb36a65,brass:0xd9bd86,teal:0x327b72};
+const mats={};for(const [k,v] of Object.entries(C)){mats[k]=new THREE.MeshStandardMaterial({color:v,roughness:k==="eye"?.47:.87,side:THREE.DoubleSide})}
+function emit(name,geo,m,par=person){const x=new THREE.Mesh(geo,mats[m]);x.name=name;x.castShadow=true;x.receiveShadow=true;par.add(x);return x}
+function loft(name,rings,m,n=36,par=person){const verts=[],faces=[];for(const [y,x,z,rx,rz] of rings)for(let i=0;i<n;i++){const a=i*2*Math.PI/n;verts.push(x+rx*Math.cos(a),y,z+rz*Math.sin(a))}for(let k=0;k<rings.length-1;k++)for(let i=0;i<n;i++){const a=k*n+i,b=k*n+(i+1)%n,c=(k+1)*n+i,d=(k+1)*n+(i+1)%n;faces.push(a,b,c,b,d,c)}const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(verts,3));g.setIndex(faces);g.computeVertexNormals();return emit(name,g,m,par)}
+function ell(name,x,y,z,rx,ry,rz,m,par=person){const g=new THREE.SphereGeometry(1,24,16),p=emit(name,g,m,par);p.position.set(x,y,z);p.scale.set(rx,ry,rz);return p}
+function curve(name,pts,rad,m,par=person){const c=new THREE.CatmullRomCurve3(pts.map(p=>new THREE.Vector3(...p)));return emit(name,new THREE.TubeGeometry(c,Math.max(12,pts.length*6),rad,7,false),m,par)}
+function cloth(name,points,m){const v=points.flat(),inds=[];for(let i=1;i<points.length-1;i++)inds.push(0,i,i+1);const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(v,3));g.setIndex(inds);g.computeVertexNormals();return emit(name,g,m)}
+const person=new THREE.Group();person.name="Yu_V14_Sculpt";scene.add(person);
+for(const s of [-1,1]){
+ const id=s<0?"L":"R",x=s*.17;
+ loft(id+"_trouser",[[.22,x,.01,.116,.13],[.5,x,.01,.12,.13],[.8,x,0,.15,.16],[1.13,x,0,.18,.18],[1.4,x*.88,-.015,.18,.17]],"pants");
+ ell(id+"_sneaker",x,.147,.13,.155,.125,.288,"shoes");ell(id+"_sole",x,.067,.15,.16,.045,.302,"sole");
+ curve(id+"_shoe_trim",[[x-.087,.165,.39],[x,.165,.424],[x+.075,.165,.394]],.012,"teal");
+}
+loft("under_shirt",[[1.4,0,.02,.27,.16],[1.65,0,.03,.29,.19],[1.94,0,.02,.29,.18],[2.14,0,0,.23,.13]],"cream");
+loft("fitted_blazer",[[1.31,0,-.01,.33,.20],[1.45,0,0,.32,.22],[1.75,0,-.01,.31,.20],[1.97,0,0,.375,.22],[2.10,0,-.01,.37,.19],[2.17,0,-.02,.25,.15]],"coat");
+cloth("cream_center",[[-.105,1.43,.215],[.105,1.43,.215],[.075,2.06,.19],[-.075,2.06,.19]],"cream");
+cloth("left_lapel",[[-.06,1.96,.218],[-.27,2.13,.158],[-.34,1.98,.179],[-.20,1.80,.21]],"inner");
+cloth("right_lapel",[[.06,1.96,.218],[.27,2.13,.158],[.34,1.98,.179],[.20,1.80,.21]],"inner");
+for(const s of [-1,1]){
+ const id=s<0?"L":"R";
+ loft(id+"_sleeve",[[1.47,s*.45,.028,.105,.118],[1.56,s*.45,.015,.113,.123],[1.75,s*.43,-.005,.127,.131],[1.95,s*.39,-.02,.143,.145],[2.09,s*.335,-.005,.158,.15]],"coat",24);
+ loft(id+"_cuff",[[1.44,s*.45,.03,.113,.118],[1.51,s*.45,.03,.118,.122]],"cream",24);
+ ell(id+"_hand",s*.45,1.375,.052,.097,.155,.090,"skin");
+ curve(id+"_pocket",[[s*.16,1.55,.206],[s*.28,1.55,.16]],.011,"coatDark");
+}
+for(let y of [1.58,1.72,1.86])ell("button",.13,y,.21,.014,.014,.012,"brass");
+loft("neck",[[2.13,0,0,.111,.10],[2.285,0,0,.107,.099]],"skin",24);
+loft("face_sculpt",[[2.24,0,.01,.13,.11],[2.36,0,.01,.25,.22],[2.53,0,0,.36,.29],[2.71,0,-.015,.414,.33],[2.93,0,-.025,.41,.325],[3.14,0,-.035,.355,.275],[3.25,0,-.04,.20,.16]],"skin",48);
+ell("chin",0,2.427,.235,.205,.098,.08,"skin");
+for(const s of [-1,1]){
+ const id=s<0?"L":"R",x=s*.175;
+ ell(id+"_ear",s*.395,2.69,-.008,.066,.111,.067,"skin");
+ ell(id+"_innerEar",s*.443,2.69,.022,.017,.06,.027,"skinDeep");
+ ell(id+"_eyeWhite",x,2.814,.307,.102,.075,.037,"eye");
+ ell(id+"_iris",x,2.809,.341,.06,.061,.023,"brown");
+ ell(id+"_pupil",x,2.807,.359,.034,.048,.013,"hair");
+ ell(id+"_sparkle",x-.022,2.835,.371,.017,.018,.01,"eye");
+ curve(id+"_lid",[[x-s*.094,2.85,.325],[x-s*.035,2.892,.342],[x+s*.038,2.891,.342],[x+s*.097,2.851,.325]],.015,"hair");
+ curve(id+"_eyebrow",[[x-s*.09,2.974,.313],[x,2.996,.322],[x+s*.092,2.979,.312]],.016,"hair");
+ ell(id+"_blush",s*.314,2.645,.286,.075,.037,.015,"cheek");
+}
+ell("nose",0,2.716,.339,.032,.043,.044,"skinDeep");
+curve("smile",[[-.10,2.588,.298],[-.07,2.557,.322],[0,2.552,.343],[.07,2.557,.322],[.10,2.588,.298]],.013,"lips");
+loft("hair_crown",[[2.968,0,-.075,.394,.315],[3.11,0,-.043,.395,.320],[3.29,0,-.03,.34,.285],[3.385,0,-.055,.15,.15]],"hair",44);
+loft("hair_back",[[2.28,0,-.235,.28,.15],[2.45,0,-.22,.37,.19],[2.70,0,-.16,.44,.24],[3.00,0,-.10,.425,.27],[3.17,0,-.06,.39,.26]],"hair",32);
+for(const s of [-1,1])loft((s<0?"L":"R")+"_hair",[[2.37,s*.372,-.088,.10,.16],[2.56,s*.407,-.075,.12,.15],[2.83,s*.406,-.06,.114,.16],[3.07,s*.363,-.067,.10,.14]],"hair",20);
+cloth("left_fringe",[[-.41,3.034,.24],[-.32,3.17,.27],[-.12,3.21,.30],[-.23,2.995,.318],[-.34,2.929,.28]],"hair");
+cloth("right_fringe",[[.11,3.20,.29],[.38,3.14,.23],[.37,2.98,.275],[.28,2.97,.298]],"hair");
+curve("hair_shine",[[.05,3.29,.21],[.18,3.26,.215],[.29,3.185,.215]],.013,"shine");
+cloth("hair_pin",[[.305,3.1,.289],[.40,3.12,.232],[.39,3.079,.231],[.295,3.06,.289]],"brass");
+ell("company_pin",-.27,1.95,.207,.025,.025,.012,"teal");
+const ground=new THREE.Mesh(new THREE.CircleGeometry(5,64),new THREE.MeshStandardMaterial({color:0xf4f4e9,roughness:1}));
+ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+const disc=new THREE.Mesh(new THREE.CylinderGeometry(.82,.85,.065,48),new THREE.MeshStandardMaterial({color:0xa5c1b4,roughness:.87}));
+disc.position.y=-.033;disc.receiveShadow=true;scene.add(disc);
+let yaw=0,auto=false,zoom=1,down=null;
+function front(y){yaw=y;auto=false;document.getElementById("rotate").classList.remove("active");document.querySelectorAll("[data-view]").forEach(b=>b.classList.toggle("active",Math.abs(y-Number(b.dataset.angle))<.01))}
+document.querySelectorAll("[data-view]").forEach(b=>b.addEventListener("click",()=>front({front:0,side:Math.PI/2,back:Math.PI}[b.dataset.view])));
+document.getElementById("rotate").addEventListener("click",e=>{auto=!auto;e.currentTarget.classList.toggle("active",auto);document.querySelectorAll("[data-view]").forEach(b=>b.classList.remove("active"))});
+document.getElementById("zoom").addEventListener("click",e=>{zoom=zoom===1?.7:1;e.currentTarget.classList.toggle("active",zoom!==1);resize()});
+canvas.addEventListener("pointerdown",e=>{down=e.clientX;canvas.setPointerCapture(e.pointerId)});
+canvas.addEventListener("pointermove",e=>{if(down!==null){yaw+=(e.clientX-down)*.008;down=e.clientX;auto=false;document.getElementById("rotate").classList.remove("active");document.querySelectorAll("[data-view]").forEach(b=>b.classList.remove("active"))}});
+canvas.addEventListener("pointerup",()=>down=null);canvas.addEventListener("pointercancel",()=>down=null);
+canvas.addEventListener("wheel",e=>{e.preventDefault();zoom=Math.max(.65,Math.min(1.7,zoom+(e.deltaY>0?.07:-.07)));resize()},{passive:false});
+function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.fov=w<640?39:33;camera.updateProjectionMatrix();let dist=(w<640?7.6:6.9)*zoom;camera.position.set(0,2.25,dist);camera.lookAt(0,1.78,0)}
+addEventListener("resize",resize);resize();document.getElementById("status").textContent="原創 3D 網格 · 可旋轉檢查";
+const clock=new THREE.Clock();function frame(){requestAnimationFrame(frame);if(auto)yaw+=clock.getDelta()*.55;else clock.getDelta();person.rotation.y=yaw;renderer.render(scene,camera)}frame();
+addEventListener("error",e=>{const el=document.getElementById("error");el.style.display="block";el.textContent=e.message});
+</script></body></html>

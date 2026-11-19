@@ -1015,7 +1015,7 @@ function upgradeToRigged(data,isBoss,template){
  if(template._professional&&!propHolder){
   // Stand-in prop socket for imported models without our original HandR bone.
   propHolder=new THREE.Group();
-  propHolder.position.set(.36,1.37,.26);
+  const scale=figure.scale.y||1;propHolder.position.set(.36/scale,1.37/scale,.26/scale);
   figure.add(propHolder);
  }
  const heldProps={};

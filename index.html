@@ -192,6 +192,12 @@ html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none}
   <h2 id="joinTitle">歡迎來到<br><em>全台最不忙的辦公室。</em></h2><p>進來找地方坐，或跟同事一起做點沒意義的事。</p>
   <label for="nick">社畜暱稱</label><input id="nick" maxlength="12" autocomplete="nickname" placeholder="茶水間研究員"/>
   <div class="uniform-label">今天穿哪件制服？</div><div id="colors" class="colors"><button type="button" data-color="mint" class="active" aria-label="薄荷色制服" style="--sw:#91d5bb"></button><button type="button" data-color="peach" aria-label="粉色制服" style="--sw:#f0aba5"></button><button type="button" data-color="violet" aria-label="紫色制服" style="--sw:#baa7dd"></button><button type="button" data-color="blue" aria-label="藍色制服" style="--sw:#98bee6"></button><button type="button" data-color="lemon" aria-label="黃色制服" style="--sw:#f0d38b"></button></div>
+  <div class="uniform-label">人物美術版本</div>
+  <div id="characterStyles" style="display:flex;gap:8px;margin:5px 0 13px;flex-wrap:wrap">
+    <button type="button" data-charstyle="professional" style="flex:1;padding:9px 10px;border-radius:10px;border:1px solid #d4b686;background:#365950;color:#fff">新版人物 · V16</button>
+    <button type="button" data-charstyle="classic" style="flex:1;padding:9px 10px;border-radius:10px;border:1px solid #718b87;background:#243e45;color:#eee">舊版人物</button>
+  </div>
+  <div style="font-size:11px;line-height:1.4;color:#b4c9ca;margin-top:-9px;margin-bottom:12px">新版採用 Quaternius CC0 人物；需連網取得 GLB，載入失敗會自動用原本角色。</div>
   <label for="roomInput">辦公室房號 <small>相同房號才能相遇</small></label><input id="roomInput" maxlength="6" value="PUBLIC" autocomplete="off" spellcheck="false"/>
   <button type="button" id="joinBtn" class="join-button" disabled>3D 載入中…</button>
   <div id="joinWarning" class="join-warning" role="alert"></div><div class="join-note" id="demoExplain">單機體驗：不會連接真人；多人的版本需要部署 Cloudflare Worker。</div>
@@ -921,14 +927,54 @@ function avatarSeed(data){const t=String(data.name||'社畜')+'-'+String(data.co
 // Original skinned GLB models: each has its own bones, materials and nine animation clips.
 // SkeletonUtils.clone() ensures remote players never share a skeleton instance.
 const rigCache=new Map();let rigCloner=null,rigLoadErrors=[];
+// External CC0 character model lookups; all player movement/collision remains unchanged.
+// Same room is display-agnostic; clients may render classic/professional independently.
+const professionalModelPaths={
+ mint:'modular_women/Casual.glb',
+ peach:'modular_men/Suit.glb',
+ violet:'modular_women/Formal.glb',
+ blue:'modular_men/Casual.glb',
+ lemon:'modular_women/Casual.glb'
+};
+const characterStyleQuery=new URLSearchParams(location.search).get('characters');
+const characterStyle=(characterStyleQuery==='classic'||characterStyleQuery==='professional')
+ ? characterStyleQuery : (read('ssc.characterStyle')==='classic'?'classic':'professional');
+document.querySelectorAll('[data-charstyle]').forEach(button=>{
+ button.style.outline=button.dataset.charstyle===characterStyle?'2px solid #efca8c':'none';
+ button.setAttribute('aria-pressed',String(button.dataset.charstyle===characterStyle));
+ button.addEventListener('click',()=>{
+  if(button.dataset.charstyle===characterStyle)return;
+  write('ssc.characterStyle',button.dataset.charstyle);
+  const url=new URL(location.href);
+  url.searchParams.set('characters',button.dataset.charstyle);
+  location.assign(url.toString());
+ });
+});
+
 function upgradeToRigged(data,isBoss,template){
  const root=new THREE.Group(),figure=rigCloner.clone(template.scene);
  figure.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
  root.add(figure);
+ if(template._professional){
+  // Normalize source GLB proportions to existing office units (label y≈2.93).
+  // Normalization happens on each SkeletonUtils clone, not the cached template.
+  figure.updateMatrixWorld(true);
+  const sourceBox=new THREE.Box3().setFromObject(figure);
+  const sourceSize=sourceBox.getSize(new THREE.Vector3());
+  if(sourceSize.y>.01&&Number.isFinite(sourceSize.y)){
+   const k=2.55/sourceSize.y;figure.scale.multiplyScalar(k);
+   figure.updateMatrixWorld(true);
+   const bounds=new THREE.Box3().setFromObject(figure);
+   const center=bounds.getCenter(new THREE.Vector3());
+   figure.position.x-=center.x;figure.position.z-=center.z;
+   figure.position.y-=bounds.min.y;
+   figure.userData.originalY=figure.position.y;
+  }
+ }
 
  // V12: personality details are attached to animated GLB head bones.
  const stylingSeed=avatarSeed(data),headBone=figure.getObjectByName('Head');
- if(headBone){
+ if(headBone&&!template._professional){
   const accent=[0xffd49c,0xf2b8cd,0xb9e2d7,0xd7c7f2,0xf5da94][stylingSeed%5];
   const tuft=orb(headBone,accent,-.19,.52,.05,.12,.17,.12);tuft.rotation.z=-.32;tuft.castShadow=false;
   if(stylingSeed%3===0){
@@ -951,7 +997,27 @@ function upgradeToRigged(data,isBoss,template){
  const pos=coord(data.x,data.y);root.position.set(pos.x,0,pos.z);scene.add(root);
  const mixer=new THREE.AnimationMixer(figure);
  const clips=new Map(template.animations.map(clip=>[clip.name,clip]));
- const propHolder=figure.getObjectByName('HandR');
+ if(template._professional){
+  const found={};
+  for(const clip of template.animations){
+   const key=clip.name.toLowerCase();
+   if(!found.Idle&&/idle|stand|wait|breath/.test(key))found.Idle=clip;
+   if(!found.Walk&&/walk|locomotion/.test(key))found.Walk=clip;
+   if(!found.Run&&/run|sprint|jog/.test(key))found.Run=clip;
+   for(const [alias,re] of Object.entries({Wave:/wave|greet/,Dance:/dance/,Nap:/sleep|nap|lie/,Busy:/type|work|busy/,Coffee:/drink|coffee/,Stretch:/stretch/,Facepalm:/facepalm/})){
+    if(!found[alias]&&re.test(key))found[alias]=clip;
+   }
+  }
+  if(!found.Idle&&template.animations.length)found.Idle=template.animations[0];
+  for(const [alias,clip] of Object.entries(found))clips.set(alias,clip);
+ }
+ let propHolder=figure.getObjectByName('HandR');
+ if(template._professional&&!propHolder){
+  // Stand-in prop socket for imported models without our original HandR bone.
+  propHolder=new THREE.Group();
+  propHolder.position.set(.36,1.37,.26);
+  figure.add(propHolder);
+ }
  const heldProps={};
  if(propHolder){
   const coffeeCup=new THREE.Group();coffeeCup.position.set(0,-.075,.20);propHolder.add(coffeeCup);
@@ -963,7 +1029,7 @@ function upgradeToRigged(data,isBoss,template){
   heldProps.coffee=coffeeCup;heldProps.paper=paper;
   coffeeCup.visible=false;paper.visible=false;
  }
- const rig={rigged:true,root,figure,tag,mixer,clips,animation:null,animationName:'',heldProps,smoothedVelocity:0,transition:0,
+ const rig={rigged:true,professional:!!template._professional,root,figure,tag,mixer,clips,animation:null,animationName:'',heldProps,smoothedVelocity:0,transition:0,
   dir:0,moveTime:0,renderX:pos.x,renderZ:pos.z,isBoss,gaitWeight:0,actualVelocity:0};
  setRigAnimation(rig,'Idle',true);return rig;
 }
@@ -974,6 +1040,50 @@ function setRigAnimation(a,name,immediate=false){
  else if(a.animation){a.animation.stop();}
  a.animation=next;a.animationName=clip.name;
 }
+// Load one professional CC0 character per path and reuse across colors.
+async function loadProfessionalCharacters(loader){
+ const primary='https://cdn.jsdelivr.net/gh/trebeljahr/quaternius-showcase@main/public/glb/';
+ const backup='https://raw.githubusercontent.com/trebeljahr/quaternius-showcase/main/public/glb/';
+ const byPath=new Map();
+ const colors=['mint','peach','violet','blue','lemon'];
+ const modern=path=>{
+  if(!byPath.has(path)){
+   byPath.set(path,(async()=>{
+    let gltf;try{gltf=await loader.loadAsync(primary+path)}
+    catch(firstError){gltf=await loader.loadAsync(backup+path)}
+    if(!gltf?.scene)throw Error('Professional model has no scene: '+path);
+    gltf._professional=true;
+    return gltf;
+   })());
+  }
+  return byPath.get(path);
+ };
+ const results=await Promise.allSettled(colors.map(async color=>{
+  const gltf=await modern(professionalModelPaths[color]);
+  rigCache.set(color,gltf);
+  for(const [pid,old] of avatars){
+   const data=players.get(pid);
+   if(!data||data.color!==color||old.professional)continue;
+   const replacement=upgradeToRigged(data,false,gltf);
+   replacement.renderX=old.renderX;replacement.renderZ=old.renderZ;
+   replacement.dir=old.dir;replacement.root.position.copy(old.root.position);
+   if(old.rigged)old.mixer.stopAllAction();
+   scene.remove(old.root);avatars.set(pid,replacement);
+  }
+  if(color==='peach'&&boss&&!boss.professional){
+   const old=boss;boss=upgradeToRigged({name:'主管 NPC',color:'peach',x:3900,y:2508},true,gltf);
+   boss.root.position.copy(old.root.position);boss.root.visible=old.root.visible;
+   if(old.rigged)old.mixer.stopAllAction();
+   scene.remove(old.root);
+  }
+ }));
+ let ok=0;for(let i=0;i<results.length;i++){
+  if(results[i].status==='fulfilled')ok++;
+  else console.warn('New GLB unavailable; keeping original avatar for',colors[i],results[i].reason);
+ }
+ setStatus(ok?'新版人物 '+ok+'/5 種外觀已載入':'新版人物無法載入，已保留原本人物');
+ return ok;
+}
 async function loadRiggedCharacters(){
  let GLTFLoader,clone;
  try{
@@ -982,8 +1092,14 @@ async function loadRiggedCharacters(){
   rigCloner={clone};
  }catch(error){console.warn('Rig modules unavailable; safe procedural avatars are retained.',error);return}
  const loader=new GLTFLoader();const colors=['mint','peach','violet','blue','lemon'];
+ if(characterStyle==='professional'){
+  const count=await loadProfessionalCharacters(loader);
+  if(count===colors.length)return;
+  // Load old models only for colors that failed externally.
+ }
  await Promise.allSettled(colors.map(async color=>{
   try{
+   if(rigCache.has(color))return;
    let gltf;
    if(window.SSC_GLB_DATA?.[color]){
     const binary=atob(window.SSC_GLB_DATA[color]);const bytes=new Uint8Array(binary.length);
@@ -1241,12 +1357,17 @@ function updateAvatars(dt,elapsed){
    const direction=p.facing;
    if(Number.isFinite(direction)){let delta=((direction-a.dir+Math.PI*3)%(Math.PI*2))-Math.PI;a.dir+=delta*Math.min(1,dt*9)}
    a.figure.rotation.y=a.dir;
+   // New external models may not contain gait clips; a subtle bob gives
+   // movement feedback without modifying authored skinning/bones.
+   if(a.professional&&!a.clips.get(running?(fast?'Run':'Walk'):'Idle')){
+    a.figure.rotation.z=Math.sin(a.moveTime)*.025*a.gaitWeight;
+   }
    // Fast clips use their own animated stride, so character feet no longer skate.
    if(a.animation)a.animation.setEffectiveTimeScale(actionName==='Run'?1.15:actionName==='Walk'?Math.max(.76,Math.min(1.30,a.actualVelocity/WALK_SPEED)):1);
    // Small root lean and ease in/out make keyframe movement feel less robotic.
    const lean=running?Math.min(.095,a.actualVelocity/SPRINT_SPEED*.095):0;
    a.figure.rotation.x+=(lean-a.figure.rotation.x)*Math.min(1,dt*9);
-   a.figure.position.y+=(Math.abs(Math.sin(a.moveTime))*.028*a.gaitWeight-a.figure.position.y)*Math.min(1,dt*9);
+   a.figure.position.y+=((a.figure.userData.originalY||0)+Math.abs(Math.sin(a.moveTime))*.028*a.gaitWeight-a.figure.position.y)*Math.min(1,dt*9);
    if(a.heldProps?.coffee)a.heldProps.coffee.visible=p.action==='coffee';
    if(a.heldProps?.paper)a.heldProps.paper.visible=p.action==='busy'||p.action==='copy';
    a.mixer.update(dt);
